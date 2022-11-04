@@ -46,7 +46,7 @@ const readConfig = <T = Record<string, any>>(path: string): T => {
 
 const writeConfig = <T = Record<string, any>>({ data, path, dryRun = false, backup = false }: WriteConfigOptions<T>): void => {
     Logger.info(`Updating credential files`);
-    const file = ConfigParser.stringify(data, { whitespace: true });
+    const file = ConfigParser.stringify(data, { whitespace: false });
 
     if (dryRun) {
         Logger.info(`Found dry-run flag, writing to stdout...${EOL}${file}`);
@@ -109,15 +109,20 @@ const getRoleCredentials = async (profile: Profile, cache: CacheCredentials): Pr
 
     const sso = new AWS.SSO({ region: profile.sso_region });
 
-    const credentials = await sso
+    const [error, credentials] = await sso
         .getRoleCredentials({
             roleName: profile.sso_role_name,
             accountId: profile.sso_account_id,
             accessToken: cache.accessToken,
         })
-        .promise();
+        .promise()
+        .then((value) => [, value], (reason) => [reason]);
 
-    if (!credentials.roleCredentials) {
+    if (error instanceof Error) {
+        throw error;
+    }
+
+    if (!credentials?.roleCredentials) {
         throw new Error('Failed to get short-term credentials...');
     }
 
@@ -151,13 +156,7 @@ export const listProfiles = (): void => {
 
     const profiles = Object
         .keys(config)
-        .filter((key) => {
-            if (config[key].sso_start_url) {
-                return true;
-            }
-
-            return false;
-        })
+        .filter((key) => !!config[key].sso_start_url)
         .map((key) => {
             const [_, profileName] = key.split('profile ');
 
