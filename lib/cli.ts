@@ -9,8 +9,9 @@ const CLI = createCommand(pkg.name)
 
 CLI.command('creds <profiles...>')
     .usage('<profiles...> [options]')
-    .option('--dryRun', 'Writing to stdout')
-    .option('--backup', 'Make a buckup before writing to credentials file')
+    .option('--backup', 'Makes a buckup before writing to credentials file')
+    .option('--dryRun', 'Writes to stdout')
+    .option('--login', 'Creates an AWS SSO login session before fetching credentials')
     .description('Refresh short-term credentials')
     .action(async (profiles: string[], options: CredsCommandOptions) => updateShortTermCredentials(profiles, options));
 

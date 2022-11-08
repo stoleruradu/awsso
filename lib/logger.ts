@@ -18,7 +18,7 @@ export class Logger {
     }
 
     private log(message: string, color: typeof ForegroundColor): void {
-        console.log(chalk[color](`awssso: ${message}`));
+        console.log(chalk[color](message));
     }
 }
 
