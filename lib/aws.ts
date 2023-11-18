@@ -1,41 +1,41 @@
-import * as AWS from 'aws-sdk';
+import AWS from 'aws-sdk';
 import { spawn } from 'child_process';
 import crypto from 'crypto';
 import fs from 'fs-extra';
 import * as ConfigParser from 'ini';
 import os, { EOL } from 'os';
-import Logger from './logger';
+import { Logger } from './logger.js';
 
 export type CredsCommandOptions = {
-    readonly dryRun?: boolean;
-    readonly backup?: boolean;
-    readonly login?: boolean;
+    dryRun?: boolean;
+    backup?: boolean;
+    login?: boolean;
 }
 
 type Profile = {
-    readonly name: string;
-    readonly raw: {
-        readonly region: string;
-        readonly output: string;
-        readonly sso_account_id: string;
-        readonly sso_role_name: string;
-        readonly sso_start_url: string;
-        readonly sso_region: string;
+    name: string;
+    raw: {
+        region: string;
+        output: string;
+        sso_account_id: string;
+        sso_role_name: string;
+        sso_start_url: string;
+        sso_region: string;
     }
 }
 
 type CacheCredentials = {
-    readonly startUrl: string;
-    readonly region: string;
-    readonly accessToken: string;
-    readonly expiresAt: string;
+    startUrl: string;
+    region: string;
+    accessToken: string;
+    expiresAt: string;
 }
 
 type WriteConfigOptions<T> = {
-    readonly path: string;
-    readonly data: T;
-    readonly dryRun?: boolean;
-    readonly backup?: boolean;
+    path: string;
+    data: T;
+    dryRun?: boolean;
+    backup?: boolean;
 }
 
 const HOME_PATH = os.homedir();

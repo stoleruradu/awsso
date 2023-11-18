@@ -1,17 +1,22 @@
 {
   "compilerOptions": {
-    "lib": ["es2017"],
-    "module": "commonjs",
+    "lib": ["ES2023"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "noEmit": false,
-    "target": "es2017",
+    "outDir": "dist",
+    "target": "ES2022",
     "strict": true,
     "noImplicitAny": false,
     "allowJs": true,
     "sourceMap": true,
-    "moduleResolution": "node",
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "skipLibCheck": true
+  },
+  "ts-node": {
+    "esm": true,
+    "transpileOnly": true
   },
   "include": ["lib", "bin"]
 }

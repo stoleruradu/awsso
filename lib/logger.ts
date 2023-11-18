@@ -1,6 +1,6 @@
 import chalk, { ForegroundColor } from 'chalk';
 
-export class Logger {
+class ConsoleLogger {
     warn(message: string): void {
         this.log(message, 'yellow');
     }
@@ -22,4 +22,4 @@ export class Logger {
     }
 }
 
-export default new Logger();
+export const Logger = new ConsoleLogger();

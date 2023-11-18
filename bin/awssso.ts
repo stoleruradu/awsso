@@ -1,5 +1,5 @@
-import { CLI } from '../lib/cli';
-import Logger from '../lib/logger';
+import { CLI } from '../lib/cli.js';
+import { Logger } from '../lib/logger.js';
 
 if (!process.argv.slice(2).length) {
     CLI.outputHelp();

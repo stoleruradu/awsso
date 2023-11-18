@@ -1,6 +1,6 @@
 import { createCommand } from 'commander';
-import { CredsCommandOptions, listProfiles, updateShortTermCredentials } from './aws-sso';
-import pkg from '../package.json';
+import { CredsCommandOptions, listProfiles, updateShortTermCredentials } from './aws.js';
+import pkg from '../package.json' assert { type: 'json' };
 
 const CLI = createCommand(pkg.name)
     .version(pkg.version)
