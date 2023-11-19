@@ -1,0 +1,11 @@
+[package]
+name = "awsso"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = "4.4.8"
+home = "0.5.5"
+rust-ini = "0.20.0"
