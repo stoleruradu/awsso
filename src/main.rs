@@ -1,7 +1,8 @@
-use clap::Command;
+use clap::{Arg, ArgAction, Command as ClapCommand};
 use ini::Ini;
 use serde::Deserialize;
-use std::{collections::HashMap, fs, process::Stdio};
+use std::process::Command as ProcessCommand;
+use std::{collections::HashMap, fs};
 
 #[derive(Debug)]
 struct ConfigProfile {
@@ -19,6 +20,26 @@ struct ConfigSection {
     profile: ConfigProfile,
 }
 
+impl ConfigSection {
+    fn sso_cache(&self) -> Option<CredsCache> {
+        let mut hasher = sha1_smol::Sha1::new();
+
+        hasher.update(self.profile.sso_start_url.as_bytes());
+
+        let hash = hasher.digest().to_string();
+        let cache_path = home::home_dir()?
+            .join(".aws/sso/cache")
+            .join(hash + ".json");
+
+        let credentials: Result<CredsCache, serde_json::Error> = {
+            let data = fs::read_to_string(cache_path).expect("awsso: error reading cache file");
+            serde_json::from_str(&data)
+        };
+
+        credentials.ok()
+    }
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct CredsCache {
@@ -28,29 +49,23 @@ struct CredsCache {
     expires_at: String,
 }
 
-fn get_creds(section: &ConfigSection, login: bool) -> Option<CredsCache> {
+fn get_creds(profile: &str, login: bool) {
+    let sections: Vec<_> = config_sections()
+        .into_iter()
+        .filter(|section| section.name.contains(profile))
+        .collect();
+    let section = sections.first().unwrap();
+
     if login {
-        std::process::Command::new("aws")
+        ProcessCommand::new("aws")
             .args(["sso", "login", "--profile", &section.name.to_string()])
             .status()
             .expect("awsso: failed to spawn login session");
     }
 
-    let mut hasher = sha1_smol::Sha1::new();
+    let cache = section.sso_cache();
 
-    hasher.update(section.profile.sso_start_url.as_bytes());
-
-    let hash = hasher.digest().to_string();
-    let cache_path = home::home_dir()?
-        .join(".aws/sso/cache")
-        .join(hash + ".json");
-
-    let credentials: Result<CredsCache, serde_json::Error> = {
-        let data = fs::read_to_string(cache_path).expect("awsso: error reading cache file");
-        serde_json::from_str(&data)
-    };
-
-    credentials.ok()
+    println!("{:?}", cache);
 }
 
 fn config_sections() -> Vec<ConfigSection> {
@@ -84,27 +99,33 @@ fn config_sections() -> Vec<ConfigSection> {
 }
 
 fn main() {
-    let matches = Command::new("awssso")
+    let cli = ClapCommand::new("awssso")
         .about("AWS sso helper")
         .version("0.0.1")
         .subcommand_required(true)
         .arg_required_else_help(true)
-        .subcommand(Command::new("profiles").about("List the available profiles"))
-        .subcommand(Command::new("creds"))
+        .subcommand(ClapCommand::new("profiles").about("List available sso profiles"))
+        .subcommand(
+            ClapCommand::new("creds")
+                .about("Refresh short-term credentials")
+                .arg(Arg::new("profile").required(true).action(ArgAction::Set))
+                .arg(Arg::new("login").long("login").action(ArgAction::SetTrue)),
+        )
         .get_matches();
 
-    match matches.subcommand() {
+    match cli.subcommand() {
         Some(("profiles", _)) => {
             let sections = config_sections();
 
             for section in sections.iter() {
-                println!("{:#?}", section);
+                println!("{}", section.name);
             }
         }
-        Some(("creds", _)) => {
-            let sections = config_sections();
+        Some(("creds", creds_matches)) => {
+            let profile = creds_matches.get_one::<String>("profile");
+            let login = creds_matches.get_flag("login");
 
-            get_creds(&sections.first().unwrap(), true);
+            get_creds(profile.unwrap(), login);
         }
         _ => unreachable!(),
     }
