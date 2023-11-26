@@ -162,7 +162,7 @@ pub fn refresh_creds(profile: &str, login: bool) {
             println!("awsso: credentials were succesfully updated")
         }
         Err(e) => {
-            println!("{e:?}")
+            eprintln!("{e:#}");
         }
     }
 }

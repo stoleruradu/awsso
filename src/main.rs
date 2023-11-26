@@ -3,17 +3,18 @@ mod aws;
 use crate::aws::refresh_creds;
 use crate::aws::aws_config;
 
-use clap::{Arg, ArgAction, Command as ClapCommand};
+use clap::crate_version;
+use clap::{Arg, ArgAction, Command};
 
 fn main() {
-    let cli = ClapCommand::new("awssso")
+    let cli = Command::new("awsso")
         .about("AWS sso helper")
-        .version("0.0.1")
+        .version(crate_version!())
         .subcommand_required(true)
         .arg_required_else_help(true)
-        .subcommand(ClapCommand::new("profiles").about("List available sso profiles"))
+        .subcommand(Command::new("profiles").about("List available sso profiles"))
         .subcommand(
-            ClapCommand::new("creds")
+            Command::new("creds")
                 .about("Refresh short-term credentials")
                 .arg(Arg::new("profile").required(true).action(ArgAction::Set))
                 .arg(Arg::new("login").long("login").action(ArgAction::SetTrue)),
