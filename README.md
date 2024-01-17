@@ -41,6 +41,11 @@ You can run `yarn awssso creds` passing it the name of the profile you want cred
   $ yarn awssso creds dev-env
 ```
 
+Using rust
+```bash
+cargo run -- creds {profile} --login
+```
+
 ## Help
 
 You can run
