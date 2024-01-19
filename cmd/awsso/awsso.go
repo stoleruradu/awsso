@@ -1,92 +1,37 @@
 package main
 
 import (
+	"awsso/pkg/cli/profiles"
 	"fmt"
-	"log"
 	"os"
-	"path"
-	"strings"
 
-	"gopkg.in/ini.v1"
+	"github.com/spf13/cobra"
 )
 
-type ConfigSection struct {
-	Name    string
-	Profile ConfigProfile
-}
-
-func (s *ConfigSection) ShortName() string {
-	split := strings.Split(s.Name, " ")
-	return split[len(split)-1]
-}
-
-type ConfigProfile struct {
-	region       string
-	ssoAccountId string
-	ssoRoleName  string
-	ssoStartUrl  string
-	ssoRegion    string
-}
-
-func configs() (map[string]*ConfigSection, error) {
-	dirname, err := os.UserHomeDir()
-
-	if err != nil {
-		log.Fatal(err)
-		return nil, err
-	}
-
-	cfgPath := path.Join(dirname, ".aws/config")
-	cfg, err := ini.Load(cfgPath)
-
-	if err != nil {
-		log.Fatal(err)
-		return nil, err
-	}
-
-	sections := cfg.Sections()
-	configs := make(map[string]*ConfigSection)
-
-	for _, section := range sections {
-		if len(section.Keys()) == 0 {
-			continue
+var AwssoCommand = &cobra.Command{
+	Use:              "awsso [OPTIONS] COMMAND [ARG...]",
+	Short:            "AWS sso helper",
+	SilenceUsage:     true,
+	SilenceErrors:    true,
+	TraverseChildren: true,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			return cmd.Help()
 		}
 
-		keysHash := section.KeysHash()
-
-		configs[section.Name()] = &ConfigSection{
-			Name: section.Name(),
-			Profile: ConfigProfile{
-				region:       keysHash["region"],
-				ssoAccountId: keysHash["sso_account_id"],
-				ssoRoleName:  keysHash["sso_role_name"],
-				ssoStartUrl:  keysHash["sso_start_url"],
-				ssoRegion:    keysHash["sso_region"],
-			},
-		}
-	}
-
-	return configs, nil
+		return fmt.Errorf("awsso: '%s' is not a valid command.\nSee 'awsso --help'", args[0])
+	},
+	DisableFlagsInUseLine: true,
 }
 
-func profilesCommand() error {
-	hashMap, err := configs()
-
-	if err != nil {
-		return err
-	}
-
-	for _, profile := range hashMap {
-		fmt.Println(profile.ShortName())
-	}
-
-	return nil
+func init() {
+  AwssoCommand.SetHelpCommand(&cobra.Command{Hidden: true})
+  AwssoCommand.AddCommand(profiles.NewProfilesCommand())
 }
 
 func main() {
-	err := profilesCommand()
-
-	if err != nil {
+	if err := AwssoCommand.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
