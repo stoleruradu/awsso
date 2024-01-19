@@ -71,6 +71,22 @@ func configs() (map[string]*ConfigSection, error) {
 	return configs, nil
 }
 
+func tabify(s string, maxLen int) string {
+	if len(s) == maxLen {
+		return s
+	}
+
+	var b strings.Builder
+
+	b.WriteString(s)
+
+	for i := 0; i < maxLen-len(s); i++ {
+		fmt.Fprintf(&b, "%s", " ")
+	}
+
+	return b.String()
+}
+
 func NewProfilesCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "profiles",
@@ -84,14 +100,40 @@ func NewProfilesCommand() *cobra.Command {
 				return errors.New("awsso: failed to list profiles. Try '--verbose' for more info")
 			}
 
-			for _, profile := range hashMap {
-				fmt.Printf("awsso: %s", profile.ShortName())
+			maxSizes := make(map[string]int)
+
+			for _, section := range hashMap {
+				shortName := section.ShortName()
+				role := section.Profile.ssoRoleName
+				region := section.Profile.region
+
+				if len(shortName) > maxSizes["NAME"] {
+					maxSizes["NAME"] = len(shortName)
+				}
+
+				if len(role) > maxSizes["ROLE"] {
+					maxSizes["ROLE"] = len(role)
+				}
+
+				if len(region) > maxSizes["REGION"] {
+					maxSizes["REGION"] = len(region)
+				}
 			}
 
+			fmt.Printf("%s  %s  %s \n",
+				tabify("NAME", maxSizes["NAME"]),
+				tabify("ROLE", maxSizes["ROLE"]),
+				tabify("REGION", maxSizes["REGION"]))
+
+			for _, section := range hashMap {
+				fmt.Printf("%s  %s  %s \n",
+          tabify(section.ShortName(), maxSizes["NAME"]),
+          tabify(section.Profile.ssoRoleName, maxSizes["ROLE"]),
+          tabify(section.Profile.region, maxSizes["REGION"]))
+			}
 			return nil
 		},
 	}
 
 	return cmd
 }
-
