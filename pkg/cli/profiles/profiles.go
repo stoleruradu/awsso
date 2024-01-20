@@ -1,6 +1,7 @@
 package profiles
 
 import (
+	"awsso/pkg/printer"
 	"errors"
 	"fmt"
 	"log"
@@ -87,6 +88,12 @@ func tabify(s string, maxLen int) string {
 	return b.String()
 }
 
+type ProfileListItem struct {
+  name string
+  role string
+  region string
+}
+
 func NewProfilesCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "profiles",
@@ -100,37 +107,25 @@ func NewProfilesCommand() *cobra.Command {
 				return errors.New("awsso: failed to list profiles. Try '--verbose' for more info")
 			}
 
-			maxSizes := make(map[string]int)
+      profiles := make([]ProfileListItem, len(hashMap))
 
+      var i int
 			for _, section := range hashMap {
 				shortName := section.ShortName()
 				role := section.Profile.ssoRoleName
 				region := section.Profile.region
 
-				if len(shortName) > maxSizes["NAME"] {
-					maxSizes["NAME"] = len(shortName)
-				}
+        profiles[i] = ProfileListItem{
+          name: shortName,
+          role: role,
+          region: region,
+        }
 
-				if len(role) > maxSizes["ROLE"] {
-					maxSizes["ROLE"] = len(role)
-				}
-
-				if len(region) > maxSizes["REGION"] {
-					maxSizes["REGION"] = len(region)
-				}
+        i += 1
 			}
 
-			fmt.Printf("%s  %s  %s \n",
-				tabify("NAME", maxSizes["NAME"]),
-				tabify("ROLE", maxSizes["ROLE"]),
-				tabify("REGION", maxSizes["REGION"]))
+      printer.Table(profiles)
 
-			for _, section := range hashMap {
-				fmt.Printf("%s  %s  %s \n",
-          tabify(section.ShortName(), maxSizes["NAME"]),
-          tabify(section.Profile.ssoRoleName, maxSizes["ROLE"]),
-          tabify(section.Profile.region, maxSizes["REGION"]))
-			}
 			return nil
 		},
 	}
