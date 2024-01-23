@@ -2,8 +2,10 @@ package profiles
 
 import (
 	"awsso/pkg/printer"
+	"crypto/sha1"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"os"
 	"path"
@@ -31,7 +33,43 @@ type ConfigProfile struct {
 	ssoRegion    string
 }
 
-func configs() (map[string]*ConfigSection, error) {
+type SsoCache struct {
+	AccessToken string `json:"accessToken"`
+  ExpiresAt   string `json:"expiresAt"`
+}
+
+func (s ConfigProfile) SsoCache() (*SsoCache, error) {
+	h := sha1.New()
+	h.Write([]byte(s.ssoStartUrl))
+
+	sha1Hex := hex.EncodeToString(h.Sum(nil))
+
+	dirname, err := os.UserHomeDir()
+
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+
+	cachePath := path.Join(dirname, ".aws", "sso", "cache", sha1Hex + ".json")
+	dat, err := os.ReadFile(cachePath)
+
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+
+	var cache SsoCache
+
+  if err := json.Unmarshal(dat, &cache); err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+
+	return &cache, nil
+}
+
+func ConfigsMap() (map[string]*ConfigSection, error) {
 	dirname, err := os.UserHomeDir()
 
 	if err != nil {
@@ -72,26 +110,10 @@ func configs() (map[string]*ConfigSection, error) {
 	return configs, nil
 }
 
-func tabify(s string, maxLen int) string {
-	if len(s) == maxLen {
-		return s
-	}
-
-	var b strings.Builder
-
-	b.WriteString(s)
-
-	for i := 0; i < maxLen-len(s); i++ {
-		fmt.Fprintf(&b, "%s", " ")
-	}
-
-	return b.String()
-}
-
 type ProfileListItem struct {
-  name string
-  role string
-  region string
+	name   string
+	role   string
+	region string
 }
 
 func NewProfilesCommand() *cobra.Command {
@@ -100,31 +122,31 @@ func NewProfilesCommand() *cobra.Command {
 		Short: "List available sso profiles",
 		Args:  cobra.NoArgs,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			hashMap, err := configs()
+			hashMap, err := ConfigsMap()
 
 			if err != nil {
 				log.Fatal(err)
 				return errors.New("awsso: failed to list profiles. Try '--verbose' for more info")
 			}
 
-      profiles := make([]ProfileListItem, len(hashMap))
+			profiles := make([]ProfileListItem, len(hashMap))
 
-      var i int
+			var i int
 			for _, section := range hashMap {
 				shortName := section.ShortName()
 				role := section.Profile.ssoRoleName
 				region := section.Profile.region
 
-        profiles[i] = ProfileListItem{
-          name: shortName,
-          role: role,
-          region: region,
-        }
+				profiles[i] = ProfileListItem{
+					name:   shortName,
+					role:   role,
+					region: region,
+				}
 
-        i += 1
+				i += 1
 			}
 
-      printer.Table(profiles)
+			printer.Table(profiles)
 
 			return nil
 		},

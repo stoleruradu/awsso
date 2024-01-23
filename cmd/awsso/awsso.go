@@ -1,6 +1,7 @@
 package main
 
 import (
+	"awsso/pkg/cli/creds"
 	"awsso/pkg/cli/profiles"
 	"fmt"
 	"os"
@@ -8,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var AwssoCommand = &cobra.Command{
+var root = &cobra.Command{
 	Use:              "awsso [OPTIONS] COMMAND [ARG...]",
 	Short:            "AWS sso helper",
 	SilenceUsage:     true,
@@ -25,12 +26,15 @@ var AwssoCommand = &cobra.Command{
 }
 
 func init() {
-  AwssoCommand.SetHelpCommand(&cobra.Command{Hidden: true})
-  AwssoCommand.AddCommand(profiles.NewProfilesCommand())
+  root.CompletionOptions.DisableDefaultCmd = true
+  root.DisableFlagsInUseLine = true
+  root.SetHelpCommand(&cobra.Command{Hidden: true})
+  root.AddCommand(creds.NewCredsCommand())
+  root.AddCommand(profiles.NewProfilesCommand())
 }
 
 func main() {
-	if err := AwssoCommand.Execute(); err != nil {
+	if err := root.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
