@@ -27,10 +27,10 @@ func (s *ConfigSection) ShortName() string {
 
 type ConfigProfile struct {
 	region       string
-	ssoAccountId string
-	ssoRoleName  string
+	SsoAccountId string
+	SsoRoleName  string
 	ssoStartUrl  string
-	ssoRegion    string
+	SsoRegion    string
 }
 
 type SsoCache struct {
@@ -99,10 +99,10 @@ func ConfigsMap() (map[string]*ConfigSection, error) {
 			Name: section.Name(),
 			Profile: ConfigProfile{
 				region:       keysHash["region"],
-				ssoAccountId: keysHash["sso_account_id"],
-				ssoRoleName:  keysHash["sso_role_name"],
+				SsoAccountId: keysHash["sso_account_id"],
+				SsoRoleName:  keysHash["sso_role_name"],
 				ssoStartUrl:  keysHash["sso_start_url"],
-				ssoRegion:    keysHash["sso_region"],
+				SsoRegion:    keysHash["sso_region"],
 			},
 		}
 	}
@@ -134,7 +134,7 @@ func NewProfilesCommand() *cobra.Command {
 			var i int
 			for _, section := range hashMap {
 				shortName := section.ShortName()
-				role := section.Profile.ssoRoleName
+				role := section.Profile.SsoRoleName
 				region := section.Profile.region
 
 				profiles[i] = ProfileListItem{
